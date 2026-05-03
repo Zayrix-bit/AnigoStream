@@ -34,7 +34,7 @@ A high-performance, **reverse-engineered** anime scraping engine, REST API, and 
 - **Backend Framework:** Python 3.x, Flask (REST API)
 - **Scraping Engine:** BeautifulSoup4, `curl_cffi` (Impersonation Engine)
 - **Security Logic:** Custom Decryption Layer (AES-based reverse engineering)
-- **Frontend Stack:** HTML5, CSS3 (Vanilla Glassmorphism), Vanilla JavaScript, ArtPlayer
+- **Frontend Stack:** HTML5, CSS3 (Vanilla Glassmorphism), Vanilla JavaScript, Native Iframe Embeds
 
 ---
 

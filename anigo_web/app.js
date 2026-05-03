@@ -29,7 +29,7 @@ function goHome() {
     viewSearch.classList.add('active');
 
     // Clear any iframe fallback playing in the background
-    document.getElementById('artplayer').innerHTML = '';
+    document.getElementById('video-player').innerHTML = '';
 
     // Reset to Latest Updates
     searchInput.value = '';
@@ -116,7 +116,7 @@ async function openAnime(anime) {
     episodesList.innerHTML = '';
     epLoader.style.display = 'block';
 
-    document.getElementById('artplayer').innerHTML = '<div style="display:flex; height:100%; justify-content:center; align-items:center; color:#888;">Select an episode to play</div>';
+    document.getElementById('video-player').innerHTML = '<div style="display:flex; height:100%; justify-content:center; align-items:center; color:#888;">Select an episode to play</div>';
 
     try {
         const res = await fetch(`${API_BASE}/episodes/${anime.ani_id}`);
@@ -160,7 +160,7 @@ async function openAnime(anime) {
 
 async function playEpisode(ep) {
     currentEp = ep;
-    document.getElementById('artplayer').innerHTML = '<div class="loader"></div>';
+    document.getElementById('video-player').innerHTML = '<div class="loader"></div>';
     playerSubtitle.innerText = `Playing Episode ${ep.number}... Resolving Servers...`;
 
     const serverListContainer = document.getElementById('serverList');
@@ -233,14 +233,14 @@ async function playEpisode(ep) {
 
     } catch (e) {
         console.error(e);
-        document.getElementById('artplayer').innerHTML = '<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:var(--text-muted); gap: 10px;"><h2><i class="fa-solid fa-link-slash"></i> Links Dead</h2><p>Servers for this episode have been removed by the provider.</p></div>';
+        document.getElementById('video-player').innerHTML = '<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; color:var(--text-muted); gap: 10px;"><h2><i class="fa-solid fa-link-slash"></i> Links Dead</h2><p>Servers for this episode have been removed by the provider.</p></div>';
         playerSubtitle.innerText = "Error playing video.";
     }
 }
 
 async function playServer(link, epNumber, isAuto = false) {
     if (!isAuto) {
-        document.getElementById('artplayer').innerHTML = '<div class="loader"></div>';
+        document.getElementById('video-player').innerHTML = '<div class="loader"></div>';
     }
 
     // UI Update
@@ -260,7 +260,7 @@ async function playServer(link, epNumber, isAuto = false) {
                 btn.classList.add('active');
             }
             
-            document.getElementById('artplayer').innerHTML = `<iframe src="${streamData.provider}" allowfullscreen style="width:100%; height:100%; border:none; border-radius:12px;"></iframe>`;
+            document.getElementById('video-player').innerHTML = `<iframe src="${streamData.provider}" allowfullscreen style="width:100%; height:100%; border:none; border-radius:12px;"></iframe>`;
             playerSubtitle.innerText = `Episode ${epNumber} - Embedded Player (${link.server_title})`;
             return true;
         }

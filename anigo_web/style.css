@@ -391,7 +391,7 @@ main {
     pointer-events: none;
 }
 
-.artplayer-app {
+.video-player-app {
     width: 100%;
     flex-grow: 1;
     background: #000;
@@ -618,7 +618,7 @@ main {
         grid-template-columns: 1fr;
         height: auto;
     }
-    .artplayer-app {
+    .video-player-app {
         height: 50vw;
     }
     .episodes-sidebar {

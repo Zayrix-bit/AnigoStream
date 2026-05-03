@@ -58,7 +58,7 @@ ENCDEC_URL = "https://enc-dec.app/api/enc-kai"
 ENCDEC_DEC_KAI = "https://enc-dec.app/api/dec-kai"
 ENCDEC_DEC_MEGA = "https://enc-dec.app/api/dec-mega"
 
-BROWSER = "chrome120"
+BROWSER = "chrome110"
 cf_session = requests.Session(impersonate=BROWSER)
 
 # Warm up the session to get Cloudflare clearance
@@ -138,7 +138,7 @@ def search_anime(keyword):
                     title = title_tag.text.strip()
             
             ani_id = ""
-            ctrl_div = item.select_one(".ctrl button")
+            ctrl_div = item.select_one(".ctrl button, button.ttipBtn")
             if ctrl_div:
                 x_data = ctrl_div.get("x-data", "")
                 m = re.search(r"Tooltip\('([^']+)'\)", x_data)
@@ -190,14 +190,14 @@ def home_anime():
                     title = title_tag.text.strip()
             
             ani_id = ""
-            ctrl_div = item.select_one(".ctrl button")
+            ctrl_div = item.select_one(".ctrl button, button.ttipBtn")
             if ctrl_div:
                 x_data = ctrl_div.get("x-data", "")
                 m = re.search(r"Tooltip\('([^']+)'\)", x_data)
                 if m:
                     ani_id = m.group(1)
 
-            if title and ani_id not in seen:
+            if title and ani_id and ani_id not in seen:
                 seen.add(ani_id)
                 results.append({
                     "title": title,
