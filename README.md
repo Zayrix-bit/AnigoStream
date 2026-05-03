@@ -48,15 +48,29 @@ https://github.com/user-attachments/assets/fa111952-7337-4b35-bf75-1cc5a7aec039
 
 ---
 
+---
+
 ## 🚀 Quick Start
 
-For a seamless 1-click boot of the entire stack (Backend + Frontend), simply run the included shortcut:
+### 1-Click Startup (Recommended)
+Double-click **`run_anigo.bat`**. This will automatically handle dependency checks, start the API (Port 5002), start the Web Server (Port 8000), and open your browser.
 
-1. Double-click **`run_anigo.bat`**
-   - *It will automatically install missing dependencies (like `curl_cffi`).*
-   - *It starts the API on Port `5002`.*
-   - *It starts the Frontend on Port `8000`.*
-   - *It opens your default browser.*
+### Manual Terminal Startup
+If you prefer running via terminal, open two separate windows:
+
+**Window 1: Backend API**
+```bash
+python anigo_bypass_scraper.py
+```
+
+**Window 2: Frontend UI**
+```bash
+cd anigo_web
+python -m http.server 8000
+```
+*Access the app at `http://localhost:8000`*
+
+---
 
 To install dependencies manually:
 ```bash
