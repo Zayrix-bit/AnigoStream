@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnigoStream - Premium Anime</title>
+    <link rel="icon" href="data:,">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- ArtPlayer & Hls.js -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
+</head>
+<body>
+    <div class="background-glow"></div>
+    <div class="background-glow bg-2"></div>
+
+    <header>
+        <div class="logo" id="logoBtn" style="cursor: pointer;">
+            <i class="fa-solid fa-play"></i> Anigo<span>Stream</span>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search for anime...">
+            <button id="searchBtn"><i class="fa-solid fa-search"></i></button>
+        </div>
+    </header>
+
+    <main id="app">
+        <!-- View: Search Results -->
+        <section id="view-search" class="view active">
+            <div id="hero-banner" class="hero-banner" style="display: none;">
+                <img id="hero-bg-img" class="hero-bg" src="" alt="">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <span class="hero-badge">🔥 Spotlight</span>
+                    <h1 id="hero-title">Anime Title</h1>
+                    <p class="hero-desc">Experience the best anime in ultra-high quality, ad-free. Subbed and Dubbed episodes ready to stream.</p>
+                    <div class="hero-buttons">
+                        <button id="hero-play-btn" class="primary-btn"><i class="fa-solid fa-play"></i> Watch Now</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title" id="grid-title">Recommended for You</h2>
+            <div class="loader" id="search-loader" style="display: none;"></div>
+            <div class="grid" id="resultsGrid">
+                <!-- Items injected here -->
+            </div>
+        </section>
+
+        <!-- View: Player -->
+        <section id="view-player" class="view">
+            <button class="back-btn" id="backToSearch"><i class="fa-solid fa-arrow-left"></i> Back to Search</button>
+            <div class="player-layout">
+                <div class="video-container">
+                    <div id="artplayer" class="artplayer-app"></div>
+                    <div class="now-playing">
+                        <h2 id="playerTitle">Select an episode</h2>
+                        <p id="playerSubtitle"></p>
+                        <div id="serverList" class="server-list" style="display: none; margin-top: 15px;">
+                            <div class="lang-toggle" id="langToggle" style="margin-left: 0; margin-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px; border-radius: 0; background: transparent;">
+                                <button class="lang-btn active" data-lang="sub">SUB</button>
+                                <button class="lang-btn" data-lang="dub">DUB</button>
+                            </div>
+                            <span class="server-label">Servers:</span>
+                            <div class="server-buttons" id="serverButtonsContainer"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="episodes-sidebar">
+                    <div class="sidebar-header">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <h3>Episodes</h3>
+                            <input type="hidden" id="langFilter" value="sub">
+                        </div>
+                        <div class="loader-small" id="ep-loader" style="display: none;"></div>
+                    </div>
+                    <div class="episodes-list" id="episodesList">
+                        <!-- Episodes injected here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
