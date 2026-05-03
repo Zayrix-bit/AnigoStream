@@ -3,6 +3,9 @@
 
 A high-performance, **reverse-engineered** anime scraping engine, REST API, and Premium Frontend for **Anigo.to**. This project features advanced decryption logic to bypass Cloudflare security, resolve direct M3U8 streaming links and iframe, and includes an intelligent auto-fallback frontend player.
 
+<img width="636" height="311" alt="Screenshot 2026-05-03 165241" src="https://github.com/user-attachments/assets/5a35c33e-d8bf-4e0f-b91b-868fe49076cf" />
+
+
 ---
 
 
