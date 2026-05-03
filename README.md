@@ -16,6 +16,14 @@ A high-performance, **reverse-engineered** anime scraping engine, REST API, and 
   <i>Premium Watch Page with Server Switching & Auto-Fallback</i>
 </p>
 
+
+
+
+https://github.com/user-attachments/assets/fa111952-7337-4b35-bf75-1cc5a7aec039
+
+
+
+
 ---
 
 ## ✨ Key Features
