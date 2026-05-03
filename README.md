@@ -4,6 +4,20 @@ A high-performance, **reverse-engineered** anime scraping engine, REST API, and 
 
 ---
 
+<p align="center">
+  <img src="assets/home.png" width="800" alt="AnigoStream Home">
+  <br>
+  <i>Home Dashboard with Cinematic Hero Banner</i>
+</p>
+
+<p align="center">
+  <img src="assets/watch.png" width="800" alt="AnigoStream Watch">
+  <br>
+  <i>Premium Watch Page with Server Switching & Auto-Fallback</i>
+</p>
+
+---
+
 ## ✨ Key Features
 
 - **🚀 Cloudflare Bypass:** Built with `curl_cffi` to seamlessly emulate browser signatures and bypass strict 403 Forbidden/Cloudflare blocks.

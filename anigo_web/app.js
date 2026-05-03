@@ -1,5 +1,4 @@
 const API_BASE = "http://127.0.0.1:5002/api";
-let art = null;
 let currentAnime = null;
 
 // DOM Elements
@@ -28,10 +27,7 @@ function goHome() {
     window.location.hash = '';
     viewPlayer.classList.remove('active');
     viewSearch.classList.add('active');
-    if (art) {
-        art.destroy();
-        art = null;
-    }
+
     // Clear any iframe fallback playing in the background
     document.getElementById('artplayer').innerHTML = '';
 
@@ -120,10 +116,6 @@ async function openAnime(anime) {
     episodesList.innerHTML = '';
     epLoader.style.display = 'block';
 
-    if (art) {
-        art.destroy();
-        art = null;
-    }
     document.getElementById('artplayer').innerHTML = '<div style="display:flex; height:100%; justify-content:center; align-items:center; color:#888;">Select an episode to play</div>';
 
     try {
@@ -168,10 +160,6 @@ async function openAnime(anime) {
 
 async function playEpisode(ep) {
     currentEp = ep;
-    if (art) {
-        art.destroy();
-        art = null;
-    }
     document.getElementById('artplayer').innerHTML = '<div class="loader"></div>';
     playerSubtitle.innerText = `Playing Episode ${ep.number}... Resolving Servers...`;
 
@@ -251,9 +239,7 @@ async function playEpisode(ep) {
 }
 
 async function playServer(link, epNumber, isAuto = false) {
-    if (art && !isAuto) {
-        art.destroy();
-        art = null;
+    if (!isAuto) {
         document.getElementById('artplayer').innerHTML = '<div class="loader"></div>';
     }
 
@@ -268,34 +254,15 @@ async function playServer(link, epNumber, isAuto = false) {
         const streamRes = await fetch(`${API_BASE}/source/${link.id}`);
         const streamData = await streamRes.json();
 
-        if (streamData.success && streamData.stream_data && streamData.stream_data.status === 200) {
+        if (streamData.success && streamData.provider) {
             if (btn) {
                 btn.classList.remove('dead');
                 btn.classList.add('active');
             }
-            if (streamData.stream_data.sources && streamData.stream_data.sources.length > 0) {
-                const source = streamData.stream_data.sources.find(s => s.type === "hls") || streamData.stream_data.sources[0];
-                const videoUrl = source.file;
-
-                let subtitles = [];
-                if (streamData.stream_data.tracks) {
-                    subtitles = streamData.stream_data.tracks
-                        .filter(t => t.kind === "captions")
-                        .map(t => ({
-                            html: t.label,
-                            url: t.file,
-                            default: t.default
-                        }));
-                }
-
-                initPlayer(videoUrl, subtitles, epNumber);
-                playerSubtitle.innerText = `Episode ${epNumber} - Auto/1080p (${link.server_title})`;
-                return true;
-            } else if (streamData.provider) {
-                document.getElementById('artplayer').innerHTML = `<iframe src="${streamData.provider}" allowfullscreen style="width:100%; height:100%; border:none; border-radius:16px;"></iframe>`;
-                playerSubtitle.innerText = `Episode ${epNumber} - Embedded Player (${link.server_title})`;
-                return true;
-            }
+            
+            document.getElementById('artplayer').innerHTML = `<iframe src="${streamData.provider}" allowfullscreen style="width:100%; height:100%; border:none; border-radius:12px;"></iframe>`;
+            playerSubtitle.innerText = `Episode ${epNumber} - Embedded Player (${link.server_title})`;
+            return true;
         }
 
         // If it reaches here, it means 404 or dead link
@@ -316,64 +283,7 @@ async function playServer(link, epNumber, isAuto = false) {
     }
 }
 
-function initPlayer(url, subtitles, epNumber) {
-    document.getElementById('artplayer').innerHTML = '';
 
-    art = new Artplayer({
-        container: '#artplayer',
-        url: url,
-        title: `${currentAnime.title} - Episode ${epNumber}`,
-        theme: '#FF1493',
-        volume: 0.8,
-        autoplay: true,
-        pip: true,
-        autoSize: true,
-        autoMini: true,
-        screenshot: true,
-        setting: true,
-        loop: false,
-        flip: true,
-        playbackRate: true,
-        aspectRatio: true,
-        fullscreen: true,
-        subtitleOffset: true,
-        miniProgressBar: true,
-        mutex: true,
-        backdrop: true,
-        playsInline: true,
-        autoPlayback: true,
-        airplay: true,
-        customType: {
-            m3u8: function (video, url) {
-                if (Hls.isSupported()) {
-                    const hls = new Hls();
-                    hls.loadSource(url);
-                    hls.attachMedia(video);
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = url;
-                } else {
-                    art.notice.show = 'Does not support playback of m3u8';
-                }
-            }
-        },
-        settings: subtitles.length > 0 ? [
-            {
-                width: 200,
-                html: 'Subtitles',
-                tooltip: 'English',
-                icon: '<i class="fa-solid fa-closed-captioning"></i>',
-                selector: [
-                    { html: 'Off', url: '' },
-                    ...subtitles
-                ],
-                onSelect: function (item) {
-                    art.subtitle.url = item.url;
-                    return item.html;
-                },
-            }
-        ] : []
-    });
-}
 
 async function loadHome() {
     resultsGrid.innerHTML = '';
