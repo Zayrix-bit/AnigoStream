@@ -1,3 +1,4 @@
+
 # 🎬 AnigoStream - Premium Anime Engine & Scraper
 
 A high-performance, **reverse-engineered** anime scraping engine, REST API, and Premium Frontend for **Anigo.to**. This project features advanced decryption logic to bypass Cloudflare security, resolve direct M3U8 streaming links, and includes an intelligent auto-fallback frontend player.
@@ -5,13 +6,14 @@ A high-performance, **reverse-engineered** anime scraping engine, REST API, and 
 ---
 
 <p align="center">
-  <img src="assets/home.png" width="800" alt="AnigoStream Home">
+  <img width="1919" height="1136" alt="Screenshot 2026-05-03 155647" src="https://github.com/user-attachments/assets/81a8d21d-8539-4ad4-85c6-95aed24c6178" />
   <br>
   <i>Home Dashboard with Cinematic Hero Banner</i>
 </p>
 
 <p align="center">
-  <img src="assets/watch.png" width="800" alt="AnigoStream Watch">
+ <img width="1919" height="1138" alt="Screenshot 2026-05-03 155815" src="https://github.com/user-attachments/assets/393959ff-7075-4cee-a514-c449e9af8a67" />
+
   <br>
   <i>Premium Watch Page with Server Switching & Auto-Fallback</i>
 </p>
