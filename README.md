@@ -5,21 +5,6 @@ A high-performance, **reverse-engineered** anime scraping engine, REST API, and 
 
 ---
 
-<p align="center">
-  <img width="1919" height="1136" alt="Screenshot 2026-05-03 155647" src="https://github.com/user-attachments/assets/81a8d21d-8539-4ad4-85c6-95aed24c6178" />
-  <br>
-  <i>Home Dashboard with Cinematic Hero Banner</i>
-</p>
-
-<p align="center">
- <img width="1919" height="1138" alt="Screenshot 2026-05-03 155815" src="https://github.com/user-attachments/assets/393959ff-7075-4cee-a514-c449e9af8a67" />
-
-  <br>
-  <i>Premium Watch Page with Server Switching & Auto-Fallback</i>
-</p>
-
-
-
 
 https://github.com/user-attachments/assets/fa111952-7337-4b35-bf75-1cc5a7aec039
 
