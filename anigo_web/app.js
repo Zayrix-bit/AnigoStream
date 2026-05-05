@@ -17,6 +17,12 @@ const episodesList = document.getElementById('episodesList');
 const resultCount = document.getElementById('resultCount');
 const toast = document.getElementById('toast');
 const quickHomeBtn = document.getElementById('quickHomeBtn');
+const heroDesc = document.getElementById('hero-desc');
+const heroBadge = document.getElementById('hero-badge');
+const heroSecondaryBtn = document.getElementById('hero-secondary-btn');
+const heroMetaType = document.getElementById('hero-meta-type');
+const heroMetaLang = document.getElementById('hero-meta-lang');
+const heroMetaQuality = document.getElementById('hero-meta-quality');
 const prevEpBtn = document.getElementById('prevEpBtn');
 const nextEpBtn = document.getElementById('nextEpBtn');
 const episodeSearch = document.getElementById('episodeSearch');
@@ -66,6 +72,38 @@ function showToast(message, duration = 1800) {
     toast.innerText = message;
     toast.classList.add('show');
     window.setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function getHeroDescription(title) {
+    const moods = [
+        "Cinematic action, emotional moments, and top-tier visuals in one binge-worthy journey.",
+        "High-intensity arcs, iconic characters, and powerful storytelling crafted for marathon watching.",
+        "Trending episodes with polished playback, fast servers, and a premium watch experience."
+    ];
+    if (!title) return moods[0];
+    const idx = Math.abs(title.length) % moods.length;
+    return moods[idx];
+}
+
+function bindHero(anime, badgeText = "🔥 Spotlight") {
+    if (!anime) return;
+    document.getElementById('hero-bg-img').src = anime.poster || "";
+    document.getElementById('hero-title').innerText = anime.title || "Anime Title";
+    heroBadge.innerText = badgeText;
+    heroDesc.innerText = getHeroDescription(anime.title);
+    heroMetaType.innerText = anime.slug && anime.slug.includes("movie") ? "Movie" : "Series";
+    heroMetaLang.innerText = "SUB + DUB";
+    heroMetaQuality.innerText = "Adaptive Stream";
+
+    const oldPlayBtn = document.getElementById('hero-play-btn');
+    const newPlayBtn = oldPlayBtn.cloneNode(true);
+    oldPlayBtn.parentNode.replaceChild(newPlayBtn, oldPlayBtn);
+    newPlayBtn.addEventListener('click', () => openAnime(anime));
+
+    const oldSecondaryBtn = document.getElementById('hero-secondary-btn');
+    const newSecondaryBtn = oldSecondaryBtn.cloneNode(true);
+    oldSecondaryBtn.parentNode.replaceChild(newSecondaryBtn, oldSecondaryBtn);
+    newSecondaryBtn.addEventListener('click', () => openAnime(anime));
 }
 
 function hideAutocomplete() {
@@ -340,15 +378,7 @@ async function performSearch(query, isRealtime = false) {
         if (finalResults.length > 0) {
             // Setup Hero Banner with the first result
             const heroAnime = finalResults[0];
-            document.getElementById('hero-bg-img').src = heroAnime.poster;
-            document.getElementById('hero-title').innerText = heroAnime.title;
-
-            // Re-bind click event
-            const oldBtn = document.getElementById('hero-play-btn');
-            const newBtn = oldBtn.cloneNode(true);
-            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-            newBtn.addEventListener('click', () => openAnime(heroAnime));
-
+            bindHero(heroAnime, "🔎 Search Highlight");
             heroBanner.style.display = 'flex';
 
             const filtered = applyAdvancedFilters(finalResults.slice(1), query);
@@ -567,15 +597,7 @@ async function loadHome() {
             discoveryPool = data.data;
             // Setup Hero Banner with the first result
             const heroAnime = data.data[0];
-            document.getElementById('hero-bg-img').src = heroAnime.poster;
-            document.getElementById('hero-title').innerText = heroAnime.title;
-
-            // Re-bind click event
-            const oldBtn = document.getElementById('hero-play-btn');
-            const newBtn = oldBtn.cloneNode(true);
-            oldBtn.parentNode.replaceChild(newBtn, oldBtn);
-            newBtn.addEventListener('click', () => openAnime(heroAnime));
-
+            bindHero(heroAnime, "🔥 Spotlight");
             heroBanner.style.display = 'flex';
 
             renderAnimeGrid(data.data.slice(1));
