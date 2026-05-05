@@ -24,6 +24,9 @@ https://github.com/user-attachments/assets/fa111952-7337-4b35-bf75-1cc5a7aec039
 - **🛡️ Direct M3U8 Resolution:** Reverse-engineered decryption logic (`Kai` and `Mega` algorithms) to extract raw video sources from external providers.
 - **📱 Premium Glassmorphism UI:** Complete frontend included with a dynamic Hero Banner, interactive Server Selector, and cinematic video player.
 - **🧠 Advanced Caching:** Persistent JSON-based cache (`cache_anigo_bypass.json`) with configurable TTL for ultra-fast 0ms response times.
+- **🔎 Fuzzy Search Support:** Frontend search now supports typo-tolerant matching and approximate title discovery.
+- **🧱 Request Guardrails:** Built-in per-IP rate limiting and stricter request controls to reduce free-tier hosting overuse.
+- **🪙 Token Memoization:** Encode/decode token responses are cached to avoid repeated upstream encryption/decryption calls.
 
 ---
 
@@ -63,6 +66,26 @@ python -m http.server 8000
 To install dependencies manually:
 ```bash
 pip install -r requirements_anigo.txt
+```
+
+---
+
+## ⚙️ Runtime Controls (Important for Free Tier Hosts)
+
+`anigo_bypass_scraper.py` now includes safer defaults for limited hosting plans (Render/free VPS-style limits):
+
+- `PREFETCH_ENABLED = False` (avoids background burst requests)
+- `RATE_LIMIT_MAX_REQUESTS = 60` per `60s` per IP
+- Increased endpoint cache TTL for episodes/servers/source
+- Token-level cache for enc/dec API calls
+
+### Optional Debug Mode
+By default backend starts without Flask debug reloader.
+Set env var to enable debug:
+
+```bash
+ANIGO_DEBUG=true
+python anigo_bypass_scraper.py
 ```
 
 ---
@@ -116,8 +139,8 @@ http://localhost:5002/api/source/abcLinkId789
 ## 🎨 UI Architecture (`anigo_web`)
 
 The project includes a standalone modular frontend:
-- **`app.js`**: Core state management, routing (Search -> Watch), dynamic DOM injection, and intelligent Server Fallback logic (`playServer()`).
-- **`style.css`**: Advanced UI styling featuring custom scrollbars, animated buttons, soft glowing shadows, and grid layouts.
+- **`app.js`**: Core state management, routing (Search -> Watch), real-time search, fuzzy fallback, and intelligent Server Fallback logic (`playServer()`).
+- **`style.css`**: Advanced UI styling featuring compact anime cards, animated buttons, custom scrollbars, premium layout spacing, and responsive watch/search views.
 - **`index.html`**: Clean semantic HTML structure using modular `<section>` views.
 
 ---
