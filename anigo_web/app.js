@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:5002/api";
+const API_BASE = "http://localhost:5002/api";
 let currentAnime = null;
 
 // DOM Elements
@@ -14,14 +14,274 @@ const backToSearch = document.getElementById('backToSearch');
 const playerTitle = document.getElementById('playerTitle');
 const playerSubtitle = document.getElementById('playerSubtitle');
 const episodesList = document.getElementById('episodesList');
+const resultCount = document.getElementById('resultCount');
+const toast = document.getElementById('toast');
+const quickHomeBtn = document.getElementById('quickHomeBtn');
+const prevEpBtn = document.getElementById('prevEpBtn');
+const nextEpBtn = document.getElementById('nextEpBtn');
+const episodeSearch = document.getElementById('episodeSearch');
+const clearSearchBtn = document.getElementById('clearSearchBtn');
+const autocompleteList = document.getElementById('autocompleteList');
+const matchMode = document.getElementById('matchMode');
+const sortMode = document.getElementById('sortMode');
+const resultLimit = document.getElementById('resultLimit');
+const posterOnly = document.getElementById('posterOnly');
 
 // Event Listeners
 let currentEp = null;
+let allEpisodes = [];
+let currentEpIndex = -1;
+let searchTimer = null;
+let latestSearchSeq = 0;
+let discoveryPool = [];
 searchBtn.addEventListener('click', () => performSearch(searchInput.value));
 searchInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') performSearch(searchInput.value);
+    if (e.key === 'Enter') {
+        performSearch(searchInput.value);
+    }
 });
+searchInput.addEventListener('input', handleRealtimeSearch);
 document.getElementById('logoBtn').addEventListener('click', goHome);
+quickHomeBtn.addEventListener('click', goHome);
+prevEpBtn.addEventListener('click', () => jumpEpisode(-1));
+nextEpBtn.addEventListener('click', () => jumpEpisode(1));
+episodeSearch.addEventListener('input', () => filterEpisodes(episodeSearch.value));
+clearSearchBtn.addEventListener('click', clearSearchInput);
+document.addEventListener('click', (e) => {
+    return;
+});
+matchMode.addEventListener('change', rerunCurrentSearch);
+sortMode.addEventListener('change', rerunCurrentSearch);
+resultLimit.addEventListener('change', rerunCurrentSearch);
+posterOnly.addEventListener('change', rerunCurrentSearch);
+document.querySelectorAll('.chip-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const query = btn.dataset.query;
+        searchInput.value = query;
+        performSearch(query);
+    });
+});
+
+function showToast(message, duration = 1800) {
+    toast.innerText = message;
+    toast.classList.add('show');
+    window.setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+function hideAutocomplete() {
+    if (!autocompleteList) return;
+    autocompleteList.classList.remove('show');
+    autocompleteList.innerHTML = '';
+}
+
+function showAutocomplete(items) {
+    return;
+}
+
+function renderAnimeGrid(list) {
+    resultsGrid.innerHTML = '';
+    list.forEach(anime => {
+        const card = document.createElement('div');
+        card.className = 'anime-card';
+        card.innerHTML = `
+            <div class="poster-wrapper">
+                <img src="${anime.poster}" alt="${anime.title}">
+                <div class="poster-gradient"></div>
+                <div class="card-content">
+                    <div class="card-title" title="${anime.title}">${anime.title}</div>
+                </div>
+                <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
+            </div>
+        `;
+        card.addEventListener('click', () => openAnime(anime));
+        resultsGrid.appendChild(card);
+    });
+    resultCount.innerText = `${list.length} titles`;
+}
+
+function normalizeText(value) {
+    return (value || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function isSubsequence(needle, haystack) {
+    if (!needle || !haystack) return false;
+    let i = 0;
+    for (const ch of haystack) {
+        if (ch === needle[i]) i += 1;
+        if (i === needle.length) return true;
+    }
+    return false;
+}
+
+function levenshtein(a, b) {
+    const m = a.length;
+    const n = b.length;
+    if (!m) return n;
+    if (!n) return m;
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+            dp[i][j] = Math.min(
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost
+            );
+        }
+    }
+    return dp[m][n];
+}
+
+function scoreAnimeMatch(query, title) {
+    const q = normalizeText(query);
+    const t = normalizeText(title);
+    if (!q || !t) return 0;
+
+    if (t === q) return 1000;
+    if (t.startsWith(q)) return 900;
+    if (t.includes(q)) return 700;
+
+    const qTokens = q.split(" ").filter(Boolean);
+    const tTokens = t.split(" ").filter(Boolean);
+    const overlap = qTokens.filter(tok => tTokens.some(tt => tt.includes(tok))).length;
+    let score = overlap * 120;
+
+    if (isSubsequence(q.replace(/\s/g, ""), t.replace(/\s/g, ""))) {
+        score += 180;
+    }
+
+    const dist = levenshtein(q, t);
+    const maxLen = Math.max(q.length, t.length);
+    const sim = 1 - dist / Math.max(1, maxLen);
+    if (sim >= 0.55) score += Math.floor(sim * 300);
+
+    return score;
+}
+
+function fuzzyFindFromPool(query, pool) {
+    const unique = new Map();
+    pool.forEach(item => {
+        if (item && item.ani_id && !unique.has(item.ani_id)) unique.set(item.ani_id, item);
+    });
+
+    const ranked = [];
+    unique.forEach(item => {
+        const score = scoreAnimeMatch(query, item.title);
+        if (score >= 180) ranked.push({ score, item });
+    });
+
+    ranked.sort((a, b) => b.score - a.score);
+    return ranked.map(r => r.item);
+}
+
+function applyAdvancedFilters(list, query) {
+    const q = query.trim().toLowerCase();
+    let output = [...list];
+
+    if (posterOnly.checked) {
+        output = output.filter(item => item.poster && item.poster.trim() !== '');
+    }
+
+    if (matchMode.value === 'exact') {
+        output = output.filter(item => item.title.toLowerCase() === q);
+    } else if (matchMode.value === 'starts') {
+        output = output.filter(item => item.title.toLowerCase().startsWith(q));
+    }
+
+    if (sortMode.value === 'az') {
+        output.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortMode.value === 'za') {
+        output.sort((a, b) => b.title.localeCompare(a.title));
+    }
+
+    const limit = Number(resultLimit.value || 24);
+    return output.slice(0, limit);
+}
+
+async function fetchSearchRaw(query) {
+    const res = await fetch(`${API_BASE}/search?keyword=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if (!data.results) return [];
+    return data.results;
+}
+
+async function rerunCurrentSearch() {
+    const q = searchInput.value.trim();
+    if (!q) return;
+    await performSearch(q, false);
+}
+
+async function handleRealtimeSearch() {
+    const query = searchInput.value.trim();
+    if (query.length === 0) {
+        clearSearchBtn.style.display = 'none';
+        hideAutocomplete();
+        return;
+    }
+
+    clearSearchBtn.style.display = 'inline-flex';
+    if (searchTimer) window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(async () => {
+        if (query.length >= 2) {
+            await performSearch(query, true);
+        }
+    }, 500);
+}
+
+function clearSearchInput() {
+    searchInput.value = '';
+    clearSearchBtn.style.display = 'none';
+    hideAutocomplete();
+    resultCount.innerText = '0 titles';
+    loadHome();
+}
+
+function filterEpisodes(query) {
+    const q = query.trim().toLowerCase();
+    document.querySelectorAll('.ep-btn').forEach(btn => {
+        const text = btn.innerText.toLowerCase();
+        btn.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+
+function syncEpisodeNavState() {
+    prevEpBtn.disabled = currentEpIndex <= 0;
+    nextEpBtn.disabled = currentEpIndex < 0 || currentEpIndex >= allEpisodes.length - 1;
+}
+
+function jumpEpisode(direction) {
+    if (!allEpisodes.length || currentEpIndex < 0) return;
+    const nextIndex = currentEpIndex + direction;
+    if (nextIndex < 0 || nextIndex >= allEpisodes.length) return;
+    currentEpIndex = nextIndex;
+    const target = allEpisodes[currentEpIndex];
+    const btn = document.getElementById(`ep-btn-${target.number}`);
+    if (btn) btn.click();
+}
+
+function renderEpisodeButtons(episodes) {
+    episodesList.innerHTML = '';
+    episodes.forEach(ep => {
+        const btn = document.createElement('button');
+        btn.className = 'ep-btn';
+        btn.id = `ep-btn-${ep.number}`;
+        btn.innerHTML = `Episode ${ep.number} ${ep.name !== String(ep.number) ? ` - ${ep.name}` : ''}`;
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentEpIndex = allEpisodes.findIndex(item => item.token === ep.token);
+            syncEpisodeNavState();
+            playEpisode(ep);
+        });
+        episodesList.appendChild(btn);
+    });
+}
 
 function goHome() {
     window.location.hash = '';
@@ -33,6 +293,11 @@ function goHome() {
 
     // Reset to Latest Updates
     searchInput.value = '';
+    episodeSearch.value = '';
+    allEpisodes = [];
+    currentEpIndex = -1;
+    syncEpisodeNavState();
+    showToast('Back to home');
     loadHome();
 }
 
@@ -47,24 +312,34 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
     });
 });
 
-async function performSearch(query) {
+async function performSearch(query, isRealtime = false) {
     if (!query) return;
-    resultsGrid.innerHTML = '';
-    searchLoader.style.display = 'block';
+    const searchSeq = ++latestSearchSeq;
+    if (!isRealtime) {
+        resultsGrid.innerHTML = '';
+        searchLoader.style.display = 'block';
+    }
+    resultCount.innerText = 'Searching...';
 
     const heroBanner = document.getElementById('hero-banner');
     heroBanner.style.display = 'none';
     document.getElementById('grid-title').innerText = query === "Jujutsu Kaisen" ? "Trending Now" : `Search Results: ${query}`;
 
     try {
-        const res = await fetch(`${API_BASE}/search?keyword=${encodeURIComponent(query)}`);
-        const data = await res.json();
-
+        const rawResults = await fetchSearchRaw(query);
+        if (searchSeq !== latestSearchSeq) return;
         searchLoader.style.display = 'none';
 
-        if (data.results && data.results.length > 0) {
+        let finalResults = rawResults;
+
+        // Fuzzy fallback: टूटा / misspelled naam ko identify karne ke liye.
+        if (finalResults.length === 0 && discoveryPool.length > 0) {
+            finalResults = fuzzyFindFromPool(query, discoveryPool);
+        }
+
+        if (finalResults.length > 0) {
             // Setup Hero Banner with the first result
-            const heroAnime = data.results[0];
+            const heroAnime = finalResults[0];
             document.getElementById('hero-bg-img').src = heroAnime.poster;
             document.getElementById('hero-title').innerText = heroAnime.title;
 
@@ -76,30 +351,21 @@ async function performSearch(query) {
 
             heroBanner.style.display = 'flex';
 
-            // Render the rest in the Grid
-            const gridResults = data.results.slice(1);
-            gridResults.forEach(anime => {
-                const card = document.createElement('div');
-                card.className = 'anime-card';
-                card.innerHTML = `
-                    <div class="poster-wrapper">
-                        <img src="${anime.poster}" alt="${anime.title}">
-                        <div class="poster-gradient"></div>
-                        <div class="card-content">
-                            <div class="card-title" title="${anime.title}">${anime.title}</div>
-                        </div>
-                        <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
-                    </div>
-                `;
-                card.addEventListener('click', () => openAnime(anime));
-                resultsGrid.appendChild(card);
-            });
+            const filtered = applyAdvancedFilters(finalResults.slice(1), query);
+            renderAnimeGrid(filtered);
+            if (rawResults.length === 0 && filtered.length > 0 && !isRealtime) {
+                showToast('Approximate matches shown');
+            }
+            if (!isRealtime) showToast(`Loaded ${filtered.length} results`);
         } else {
             resultsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No results found.</p>';
+            resultCount.innerText = '0 titles';
         }
     } catch (e) {
+        console.error("Search Error:", e);
         searchLoader.style.display = 'none';
-        resultsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Error fetching results. Ensure API is running on port 5002.</p>';
+        resultCount.innerText = 'Error';
+        resultsGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: red;">Error fetching results: ${e.message}. Ensure API is running on port 5002.</p>`;
     }
 }
 
@@ -114,6 +380,7 @@ async function openAnime(anime) {
     playerTitle.innerText = anime.title;
     playerSubtitle.innerText = "Loading episodes...";
     episodesList.innerHTML = '';
+    episodeSearch.value = '';
     epLoader.style.display = 'block';
 
     document.getElementById('video-player').innerHTML = '<div style="display:flex; height:100%; justify-content:center; align-items:center; color:#888;">Select an episode to play</div>';
@@ -132,25 +399,21 @@ async function openAnime(anime) {
 
             // Sort episodes numerically just in case
             eps.sort((a, b) => a.number - b.number);
-
-            eps.forEach(ep => {
-                const btn = document.createElement('button');
-                btn.className = 'ep-btn';
-                btn.innerHTML = `Episode ${ep.number} ${ep.name !== String(ep.number) ? ` - ${ep.name}` : ''}`;
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.ep-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    playEpisode(ep);
-                });
-                episodesList.appendChild(btn);
-            });
+            allEpisodes = eps;
+            currentEpIndex = -1;
+            renderEpisodeButtons(eps);
+            syncEpisodeNavState();
 
             // Auto play first ep if available
             if (eps.length > 0) {
                 episodesList.firstChild.click();
+                showToast(`Now watching ${anime.title}`);
             }
         } else {
             playerSubtitle.innerText = "No episodes found.";
+            allEpisodes = [];
+            currentEpIndex = -1;
+            syncEpisodeNavState();
         }
     } catch (e) {
         epLoader.style.display = 'none';
@@ -287,6 +550,7 @@ async function playServer(link, epNumber, isAuto = false) {
 
 async function loadHome() {
     resultsGrid.innerHTML = '';
+    resultCount.innerText = 'Loading...';
     searchLoader.style.display = 'block';
 
     const heroBanner = document.getElementById('hero-banner');
@@ -300,6 +564,7 @@ async function loadHome() {
         searchLoader.style.display = 'none';
 
         if (data.data && data.data.length > 0) {
+            discoveryPool = data.data;
             // Setup Hero Banner with the first result
             const heroAnime = data.data[0];
             document.getElementById('hero-bg-img').src = heroAnime.poster;
@@ -313,29 +578,15 @@ async function loadHome() {
 
             heroBanner.style.display = 'flex';
 
-            // Render the rest in the Grid
-            const gridResults = data.data.slice(1);
-            gridResults.forEach(anime => {
-                const card = document.createElement('div');
-                card.className = 'anime-card';
-                card.innerHTML = `
-                    <div class="poster-wrapper">
-                        <img src="${anime.poster}" alt="${anime.title}">
-                        <div class="poster-gradient"></div>
-                        <div class="card-content">
-                            <div class="card-title" title="${anime.title}">${anime.title}</div>
-                        </div>
-                        <div class="play-overlay"><i class="fa-solid fa-play"></i></div>
-                    </div>
-                `;
-                card.addEventListener('click', () => openAnime(anime));
-                resultsGrid.appendChild(card);
-            });
+            renderAnimeGrid(data.data.slice(1));
+            showToast('Latest updates loaded');
         } else {
             resultsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No trending anime found.</p>';
+            resultCount.innerText = '0 titles';
         }
     } catch (e) {
         searchLoader.style.display = 'none';
+        resultCount.innerText = 'Error';
         resultsGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Error fetching results. Ensure API is running on port 5002.</p>';
     }
 }
